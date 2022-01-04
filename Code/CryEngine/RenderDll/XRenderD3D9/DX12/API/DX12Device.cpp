@@ -296,26 +296,34 @@ CDevice::CDevice(ID3D12Device* d3d12Device, D3D_FEATURE_LEVEL featureLevel, UINT
 		m_OcclusionHeap.Init(this, desc);
 	}
 
-	if (S_OK != CreateOrReuseCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK, blsi(m_nodeMask), m_nodeMask),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT64) * m_TimestampHeap.GetCapacity()),
-				D3D12_RESOURCE_STATE_COPY_DEST,
-				nullptr,
-				IID_GFX_ARGS(&m_TimestampDownloadBuffer)))
 	{
-		DX12_ERROR("Could not create intermediate timestamp download buffer!");
+		const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK, blsi(m_nodeMask), m_nodeMask);
+		const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT64) * m_TimestampHeap.GetCapacity());
+		if (S_OK != CreateOrReuseCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_GFX_ARGS(&m_TimestampDownloadBuffer)))
+		{
+			DX12_ERROR("Could not create intermediate timestamp download buffer!");
+		}
 	}
 
-	if (S_OK != CreateOrReuseCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK, blsi(m_nodeMask), m_nodeMask),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT64) * m_OcclusionHeap.GetCapacity()),
-				D3D12_RESOURCE_STATE_COPY_DEST,
-				nullptr,
-				IID_GFX_ARGS(&m_OcclusionDownloadBuffer)))
 	{
-		DX12_ERROR("Could not create intermediate occlusion download buffer!");
+		const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK, blsi(m_nodeMask), m_nodeMask);
+		const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT64) * m_OcclusionHeap.GetCapacity());
+		if (S_OK != CreateOrReuseCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_GFX_ARGS(&m_OcclusionDownloadBuffer)))
+		{
+			DX12_ERROR("Could not create intermediate occlusion download buffer!");
+		}
 	}
 
 	m_TimestampMemory = nullptr;
@@ -419,7 +427,7 @@ CDevice::~CDevice()
 //---------------------------------------------------------------------------------------------------------------------
 CDescriptorBlock CDevice::GetGlobalDescriptorBlock(D3D12_DESCRIPTOR_HEAP_TYPE eType, UINT size)
 {
-	CryAutoLock<CryCriticalSectionNonRecursive> m_DescriptorAllocatorTheadSafeScope(m_DescriptorAllocatorTheadSafeScope);
+	CryAutoLock<CryCriticalSectionNonRecursive> lThreadSafeScope(m_DescriptorAllocatorTheadSafeScope);
 
 	if (DX12_GLOBALHEAP_TYPES & (1 << eType))
 	{
@@ -842,10 +850,12 @@ HRESULT STDMETHODCALLTYPE CDevice::CreateOrReuseStagingResource(
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
 	ID3D12Resource* stagingResource = NULL;
+	const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(heapType, blsi(sHeap.CreationNodeMask), sHeap.CreationNodeMask);
+	const CD3DX12_RESOURCE_DESC cResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(requiredSize);
 	HRESULT result = CreateOrReuseCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(heapType, blsi(sHeap.CreationNodeMask), sHeap.CreationNodeMask),
+		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(requiredSize),
+		&cResourceDesc,
 		initialState,
 		nullptr,
 		IID_GFX_ARGS(&stagingResource));

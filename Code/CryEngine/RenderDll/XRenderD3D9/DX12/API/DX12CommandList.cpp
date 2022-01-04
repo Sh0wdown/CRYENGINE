@@ -1107,10 +1107,12 @@ void CCommandList::UpdateSubresourceRegion(CResource& rResource, UINT subResourc
 
 	// NOTE: this is a staging resource, a single instance for all GPUs is valid
 	const NODE64& uploadMasks = rResource.GetNodeMasks();
+	const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD, blsi(uploadMasks.creationMask), uploadMasks.creationMask);
+	const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	if (S_OK != GetDevice()->CreateOrReuseCommittedResource(
-	      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD, blsi(uploadMasks.creationMask), uploadMasks.creationMask),
+	      &heapProperties,
 	      D3D12_HEAP_FLAG_NONE,
-	      &CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+	      &resourceDesc,
 	      D3D12_RESOURCE_STATE_GENERIC_READ,
 	      nullptr,
 	      IID_GFX_ARGS(&uploadBuffer)))
@@ -1146,10 +1148,12 @@ void CCommandList::UpdateSubresources(CResource& rResource, D3D12_RESOURCE_STATE
 
 	// NOTE: this is a staging resource, a single instance for all GPUs is valid
 	const NODE64& uploadMasks = rResource.GetNodeMasks();
+	const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD, blsi(uploadMasks.creationMask), uploadMasks.creationMask);
+	const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	if (S_OK != GetDevice()->CreateOrReuseCommittedResource(
-	      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD, blsi(uploadMasks.creationMask), uploadMasks.creationMask),
+	      &heapProperties,
 	      D3D12_HEAP_FLAG_NONE,
-	      &CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+	      &resourceDesc,
 	      D3D12_RESOURCE_STATE_GENERIC_READ,
 	      nullptr,
 	      IID_GFX_ARGS(&uploadBuffer)))
